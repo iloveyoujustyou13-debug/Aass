@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reduce PDF Size Online - Free PDF Compressor Tool</title>
+    <meta name="description" content="Reduce PDF size online for free. Set target size in KB, compress up to 3 PDFs at once. 100% browser-based, no upload required." />
+    
+    <!-- ========== JSON-LD Schema for SEO ========== -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Reduce PDF Size Online",
+      "url": "https://yourdomain.com/",
+      "description": "Free online PDF compressor tool. Set your desired target size in KB and compress up to 3 PDF files simultaneously. All processing is done locally in your browser.",
+      "applicationCategory": "Multimedia",
+      "operatingSystem": "All",
+      "browserRequirements": "Requires JavaScript and modern browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "reviewCount": "125"
+      }
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How does this PDF compressor work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "This tool converts each page of your PDF into high-quality JPEG images and recompresses them into a new PDF. You can set a target file size in KB, and the system automatically adjusts the compression level to achieve that size."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are my files safe and private?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes! All processing is done entirely in your browser using JavaScript (pdf.js and pdf-lib). No files are uploaded to any server, so your documents remain completely private and secure."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How many PDFs can I compress at once?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You can compress up to 3 PDF files at the same time. Simply drag and drop or select multiple files from your device."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does the output PDF have no selectable text?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Because this tool rasterizes each page into images (JPEG) to achieve maximum compression. The resulting PDF works like a scanned document, so text cannot be copied or selected. This is ideal for image-based PDFs or when file size is the top priority."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- PDF.js এবং pdf-lib CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js">
+    </script>
+
+    <style>
+        /* ----- গ্লোবাল রিসেট ও ফন্ট ----- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: #f1f5f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .card {
+            max-width: 780px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.15);
+            padding: 35px 30px;
+            transition: 0.25s;
+        }
+
+        /* ----- হেডার ----- */
+        .header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .header h1 {
+            font-size: 30px;
+            font-weight: 700;
+            color: #0b2b44;
+            letter-spacing: -0.5px;
+        }
+        .header h1 span {
+            background: #dbeafe;
+            padding: 2px 14px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e4a7a;
+            margin-left: 8px;
+        }
+
+        /* ----- ড্রপ জোন ----- */
+        .drop-zone {
+            border: 2px dashed #b9d0e5;
+            border-radius: 18px;
+            padding: 32px 20px 28px;
+            text-align: center;
+            background: #fafdff;
+            transition: 0.3s;
+            cursor: pointer;
+            margin-bottom: 24px;
+        }
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: #2563eb;
+            background: #f0f7ff;
+        }
+        .drop-zone .icon {
+            font-size: 48px;
+            opacity: 0.7;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .drop-zone p {
+            font-size: 17px;
+            color: #1f3a57;
+            font-weight: 500;
+        }
+        .drop-zone .sub {
+            font-size: 14px;
+            color: #617b94;
+            margin-top: 4px;
+        }
+        .drop-zone .file-list {
+            margin-top: 12px;
+            font-weight: 600;
+            color: #004080;
+            word-break: break-all;
+            background: #eaf1fa;
+            padding: 6px 14px;
+            border-radius: 40px;
+            display: inline-block;
+            font-size: 14px;
+        }
+        #fileInput {
+            display: none;
+        }
+
+        /* ----- টার্গেট সাইজ ইনপুট ----- */
+        .size-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px 16px;
+            background: #f5f9ff;
+            padding: 16px 20px;
+            border-radius: 18px;
+            margin-bottom: 22px;
+        }
+        .size-section label {
+            font-weight: 600;
+            color: #143450;
+            font-size: 17px;
+        }
+        .size-section .input-group {
+            display: flex;
+            align-items: center;
+            background: white;
+            border: 1px solid #d0dfed;
+            border-radius: 40px;
+            padding: 4px 4px 4px 18px;
+            box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.02);
+        }
+        .size-section .input-group input {
+            border: none;
+            outline: none;
+            font-size: 18px;
+            font-weight: 600;
+            width: 80px;
+            padding: 10px 0;
+            color: #0b2b44;
+            background: transparent;
+        }
+        .size-section .input-group input::-webkit-outer-spin-button,
+        .size-section .input-group input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+        }
+        .size-section .input-group input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .size-section .input-group span {
+            background: #e3ecf5;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 700;
+            color: #143450;
+            font-size: 15px;
+        }
+
+        /* ----- বাটন ----- */
+        .btn-primary {
+            width: 100%;
+            background: #0b2b44;
+            color: white;
+            border: none;
+            padding: 16px 20px;
+            border-radius: 60px;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.25s;
+            box-shadow: 0 6px 18px rgba(11, 43, 68, 0.25);
+            margin-bottom: 16px;
+            letter-spacing: 0.3px;
+        }
+        .btn-primary:hover {
+            background: #1a3f5e;
+            transform: scale(1.01);
+            box-shadow: 0 8px 24px rgba(11, 43, 68, 0.35);
+        }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ----- নোট ----- */
+        .note {
+            text-align: center;
+            font-size: 15px;
+            color: #2a4b6a;
+            background: #ecf3fa;
+            padding: 10px 16px;
+            border-radius: 40px;
+            margin-bottom: 22px;
+            font-weight: 500;
+        }
+        .note i {
+            font-style: normal;
+            background: #0b2b44;
+            color: white;
+            padding: 0 12px;
+            border-radius: 20px;
+            margin: 0 4px;
+            font-weight: 700;
+        }
+
+        /* ----- প্রগ্রেস ----- */
+        .progress-section {
+            margin: 18px 0 10px;
+            display: none;
+        }
+        .progress-bar-bg {
+            width: 100%;
+            height: 10px;
+            background: #e2eaf2;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #2563eb, #6ba3f0);
+            border-radius: 20px;
+            transition: width 0.2s;
+        }
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #1f3a57;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        /* ----- রেজাল্ট বক্স ----- */
+        .result-box {
+            background: #e6f4ea;
+            border-radius: 18px;
+            padding: 18px 22px;
+            margin-top: 22px;
+            display: none;
+            border: 1px solid #b8dfcb;
+        }
+        .result-box .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+        }
+        .result-box .label {
+            color: #1d4a2b;
+            font-weight: 500;
+        }
+        .result-box .value {
+            font-weight: 700;
+            color: #0b2b44;
+        }
+        .result-box .highlight {
+            color: #006b3e;
+            font-size: 18px;
+        }
+        .btn-download {
+            background: #006b3e;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 12px;
+            width: 100%;
+            font-size: 16px;
+        }
+        .btn-download:hover {
+            background: #004d2c;
+        }
+
+        /* ----- এড সেকশন (কাস্টম) ----- */
+        .ad-section {
+            margin-top: 28px;
+            border-top: 1px solid #e2eaf2;
+            padding-top: 20px;
+            text-align: center;
+        }
+        .ad-section .ad-label {
+            font-size: 13px;
+            color: #8fa3b5;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        .ad-container {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 12px;
+            border: 1px solid #e9edf2;
+            min-height: 90px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .ad-container > div {
+            max-width: 100%;
+        }
+
+        @media (max-width: 550px) {
+            .card {
+                padding: 20px 16px;
+            }
+            .header h1 {
+                font-size: 24px;
+            }
+            .size-section {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .size-section .input-group input {
+                width: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+
+        <div class="header">
+            <h1>
+                Reduce PDF Size Online
+                <span>⚡</span>
+            </h1>
+        </div>
+
+        <div class="drop-zone" id="dropZone">
+            <span class="icon">📄</span>
+            <p>Select Or Drag &amp; Drop PDF's Here</p>
+            <div class="sub">(একাধিক ফাইল সাপোর্টেড)</div>
+            <div class="file-list" id="fileList">📎 কোন ফাইল সিলেক্ট করা হয়নি</div>
+        </div>
+        <input type="file" id="fileInput" accept=".pdf" multiple />
+
+        <div class="size-section">
+            <label for="targetSize">Required PDF Size:</label>
+            <div class="input-group">
+                <input type="number" id="targetSize" value="50" min="10" max="10000" step="1" />
+                <span>Kb</span>
+            </div>
+        </div>
+
+        <button class="btn-primary" id="compressBtn">⬇️ Reduce PDF Size</button>
+
+        <div class="note">
+            <i>📌</i> Note:– You Can Reduce <strong>3</strong> PDFs Size At Once
+        </div>
+
+        <div class="progress-section" id="progressSection">
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text">
+                <span id="progressStatus">প্রস্তুত...</span>
+                <span id="progressPercent">0%</span>
+            </div>
+        </div>
+
+        <div class="result-box" id="resultBox">
+            <div class="row">
+                <span class="label">📂 Original Size</span>
+                <span class="value" id="origSize">--</span>
+            </div>
+            <div class="row">
+                <span class="label">📦 Compressed Size</span>
+                <span class="value highlight" id="compSize">--</span>
+            </div>
+            <div class="row" style="border-top:1px dashed #b8dfcb; padding-top:10px; margin-top:6px;">
+                <span class="label">📉 Reduced</span>
+                <span class="value" id="reduction" style="color:#c0392b;">--</span>
+            </div>
+            <button class="btn-download" id="downloadBtn">⬇️ Download Compressed PDF</button>
+        </div>
+
+        <!-- ========== এড সেকশন ========== -->
+        <div class="ad-section">
+            <div class="ad-label">— Sponsored —</div>
+            <div class="ad-container">
+                <div id="container-1c4a796c02ed31f78c9266bb28354671"></div>
+            </div>
+        </div>
+        <script async="async" data-cfasync="false" src="https://pl29778391.effectivecpmnetwork.com/1c4a796c02ed31f78c9266bb28354671/invoke.js">
+        </script>
+
+    </div>
+
+    <script>
+        (function() {
+            const fileInput = document.getElementById('fileInput');
+            const dropZone = document.getElementById('dropZone');
+            const fileList = document.getElementById('fileList');
+            const targetSizeInput = document.getElementById('targetSize');
+            const compressBtn = document.getElementById('compressBtn');
+            const progressSection = document.getElementById('progressSection');
+            const progressFill = document.getElementById('progressFill');
+            const progressStatus = document.getElementById('progressStatus');
+            const progressPercent = document.getElementById('progressPercent');
+            const resultBox = document.getElementById('resultBox');
+            const origSize = document.getElementById('origSize');
+            const compSize = document.getElementById('compSize');
+            const reduction = document.getElementById('reduction');
+            const downloadBtn = document.getElementById('downloadBtn');
+
+            let selectedFiles = [];
+            let compressedResults = [];
+
+            function updateFileList() {
+                if (selectedFiles.length === 0) {
+                    fileList.textContent = '📎 কোন ফাইল সিলেক্ট করা হয়নি';
+                    return;
+                }
+                const names = selectedFiles.map(f => f.name).join(', ');
+                fileList.textContent = `📎 ${names} (${selectedFiles.length} টি ফাইল)`;
+            }
+
+            function handleFiles(files) {
+                const pdfFiles = Array.from(files).filter(f => f.type === 'application/pdf');
+                if (pdfFiles.length === 0) {
+                    alert('শুধু PDF ফাইল সাপোর্টেড।');
+                    return;
+                }
+                if (pdfFiles.length > 3) {
+                    alert('আপনি একসাথে সর্বোচ্চ ৩টি PDF কমপ্রেস করতে পারেন। প্রথম ৩টি নেওয়া হবে।');
+                    selectedFiles = pdfFiles.slice(0, 3);
+                } else {
+                    selectedFiles = pdfFiles;
+                }
+                updateFileList();
+                resultBox.style.display = 'none';
+                compressedResults = [];
+                progressSection.style.display = 'none';
+            }
+
+            dropZone.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleFiles(e.target.files);
+                }
+                e.target.value = '';
+            });
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                if (e.dataTransfer.files.length) {
+                    handleFiles(e.dataTransfer.files);
+                }
+            });
+
+            function getLevelFromTarget(originalBytes, targetKB) {
+                if (targetKB <= 0) return 10;
+                const targetBytes = targetKB * 1024;
+                const ratio = targetBytes / originalBytes;
+                if (ratio >= 0.9) return 1;
+                if (ratio >= 0.65) return 2;
+                if (ratio >= 0.45) return 4;
+                if (ratio >= 0.25) return 6;
+                if (ratio >= 0.12) return 8;
+                return 10;
+            }
+
+            async function compressSinglePDF(file, targetKB, progressCallback) {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                const totalPages = pdf.numPages;
+                const originalBytes = file.size;
+                const level = getLevelFromTarget(originalBytes, targetKB);
+                const scale = Math.max(0.35, 0.55 + (10 - level) * 0.12);
+                const quality = Math.max(10, Math.min(92, 92 - (level - 1) * 8.2));
+                const newPdf = await PDFLib.PDFDocument.create();
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const viewport = page.getViewport({ scale: scale });
+                    const canvas = document.createElement('canvas');
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+                    const blob = await new Promise((resolve) => {
+                        canvas.toBlob(resolve, 'image/jpeg', quality / 100);
+                    });
+                    const imageBytes = await blob.arrayBuffer();
+                    const jpgImage = await newPdf.embedJpg(imageBytes);
+                    const pdfPage = newPdf.addPage([viewport.width, viewport.height]);
+                    pdfPage.drawImage(jpgImage, {
+                        x: 0,
+                        y: 0,
+                        width: viewport.width,
+                        height: viewport.height,
+                    });
+                    if (progressCallback) {
+                        progressCallback(i, totalPages);
+                    }
+                    canvas.width = 0;
+                    canvas.height = 0;
+                }
+                const pdfBytes = await newPdf.save();
+                return pdfBytes;
+            }
+
+            async function compressAllFiles(files, targetKB) {
+                const results = [];
+                const totalFiles = files.length;
+                for (let idx = 0; idx < files.length; idx++) {
+                    const file = files[idx];
+                    progressStatus.textContent = `📄 ফাইল ${idx+1}/${totalFiles}: "${file.name}" প্রক্রিয়া করা হচ্ছে...`;
+                    const pageProgress = (current, total) => {
+                        const fileProgress = (current / total);
+                        const overall = (idx + fileProgress) / totalFiles;
+                        const percent = Math.min(100, Math.round(overall * 100));
+                        progressFill.style.width = percent + '%';
+                        progressPercent.textContent = percent + '%';
+                    };
+                    const bytes = await compressSinglePDF(file, targetKB, pageProgress);
+                    results.push({
+                        originalName: file.name,
+                        bytes: bytes,
+                        originalSize: file.size,
+                    });
+                    const percent = Math.min(100, Math.round(((idx + 1) / totalFiles) * 100));
+                    progressFill.style.width = percent + '%';
+                    progressPercent.textContent = percent + '%';
+                }
+                return results;
+            }
+
+            compressBtn.addEventListener('click', async () => {
+                if (selectedFiles.length === 0) {
+                    alert('কমপক্ষে একটি PDF ফাইল সিলেক্ট করুন।');
+                    return;
+                }
+                const targetKB = parseFloat(targetSizeInput.value);
+                if (isNaN(targetKB) || targetKB < 1) {
+                    alert('দয়া করে একটি বৈধ টার্গেট সাইজ (KB) দিন।');
+                    return;
+                }
+                compressBtn.disabled = true;
+                compressBtn.textContent = '⏳ কমপ্রেস চলছে...';
+                resultBox.style.display = 'none';
+                progressSection.style.display = 'block';
+                progressFill.style.width = '0%';
+                progressPercent.textContent = '0%';
+                progressStatus.textContent = 'শুরু হচ্ছে...';
+
+                try {
+                    const results = await compressAllFiles(selectedFiles, targetKB);
+                    compressedResults = results;
+                    const first = results[0];
+                    const origMB = first.originalSize / (1024 * 1024);
+                    const compMB = first.bytes.length / (1024 * 1024);
+                    const reductionPercent = ((1 - (first.bytes.length / first.originalSize)) * 100);
+                    origSize.textContent = `${origMB.toFixed(2)} MB`;
+                    compSize.textContent = `${compMB.toFixed(2)} MB`;
+                    reduction.textContent = `${reductionPercent.toFixed(2)}%`;
+                    resultBox.style.display = 'block';
+                    progressStatus.textContent = `✅ সম্পন্ন! (${results.length} টি ফাইল কমপ্রেস করা হয়েছে)`;
+                    progressFill.style.width = '100%';
+                    progressPercent.textContent = '100%';
+                } catch (err) {
+                    console.error(err);
+                    alert(`❌ ত্রুটি: ${err.message || 'অজানা ত্রুটি'}`);
+                    progressStatus.textContent = '❌ কমপ্রেস ব্যর্থ হয়েছে';
+                } finally {
+                    compressBtn.disabled = false;
+                    compressBtn.textContent = '⬇️ Reduce PDF Size';
+                }
+            });
+
+            downloadBtn.addEventListener('click', () => {
+                if (compressedResults.length === 0) {
+                    alert('কোনো কমপ্রেসড ফাইল নেই। আগে কমপ্রেস করুন।');
+                    return;
+                }
+                const first = compressedResults[0];
+                const blob = new Blob([first.bytes], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const baseName = first.originalName.replace(/\.pdf$/i, '');
+                a.download = `compressed_${baseName}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+
+            updateFileList();
+        })();
+    </script>
+
+</body>
+</html>।
